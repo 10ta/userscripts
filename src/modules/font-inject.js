@@ -13,7 +13,7 @@
  */
 const FONT_STACKS = {
   sans: '"Noto Sans", "LXGW Neo XiHei", "Twemoji", sans-serif',
-  serif: '"Merriweather 18pt", "LXGW WenKai GB", "Twemoji", serif',
+  serif: '"Merriweather 18pt", "Klee One", "LXGW WenKai GB", "Twemoji", serif',
   mono: '"Inconsolata", "LXGW Neo XiHei", "Twemoji", monospace',
 };
 
