@@ -15,8 +15,9 @@ https://github.com/10ta/userscripts/releases/latest/download/toolkit.user.js
 <!-- modules:start -->
 | 模块 | 默认 | 作用站点 | 说明 |
 |---|---|---|---|
-| 解除复制/右键限制 (`remove-web-limits`) | 按网站（预置 61 个） | 全部 | Unblock copy, cut, text selection and the context menu on sites that disable them. |
-| Twemoji 替换网页 emoji 字体 (`twemoji-everywhere`) | 开 | 全部 | Map Segoe UI Emoji / Apple Color Emoji / Noto Color Emoji to the locally installed Twemoji (COLR) font. |
+| 等宽字体替换（代码） (`mono-font`) | 开 | 全部 | Force code / pre / kbd / samp to Inconsolata + LXGW Neo XiHei + Twemoji. |
+| 解除复制/右键限制 (`remove-web-limits`) | 按网站（预置 62 个） | 全部 | Unblock copy, cut, text selection and the context menu on sites that disable them. |
+| Twemoji 替换网页 emoji 字体 (`twemoji-everywhere`) | 开 | 全部 | Map common emoji font names to the locally installed Twemoji (COLR) font. |
 <!-- modules:end -->
 
 （上表由构建脚本根据 `src/modules/` 自动生成，不要手动修改。）
