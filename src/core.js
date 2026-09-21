@@ -188,11 +188,11 @@ function buildMenu() {
   // Local per-site changes: offer export / clear only when there are any.
   const diff = exportLocalDiffs();
   if (diff) {
-    menuHandles.push(GM_registerMenuCommand('📋 导出本地网站改动', () => {
+    menuHandles.push(GM_registerMenuCommand('📋 导出网址限制改动', () => {
       GM_setClipboard(diff, 'text');
       alert(`已复制到剪贴板，整理后写入对应模块的 defaultSites 并 push：\n\n${diff}`);
     }));
-    menuHandles.push(GM_registerMenuCommand('🧹 清除本地网站改动', () => {
+    menuHandles.push(GM_registerMenuCommand('🧹 清除网址限制改动', () => {
       if (confirm(`清除后，各网站恢复为代码中 defaultSites 的状态。确定清除？\n\n${diff}`)) {
         clearLocalDiffs();
         location.reload();
