@@ -44,7 +44,7 @@ if (dup) {
 // Aggregate @match from modules is not needed: core filters by host at runtime.
 const grants = [
   'GM_addStyle', 'GM_getValue', 'GM_setValue',
-  'GM_registerMenuCommand', 'GM_unregisterMenuCommand',
+  'GM_registerMenuCommand', 'GM_unregisterMenuCommand', 'unsafeWindow',
 ];
 
 const header = [
@@ -56,6 +56,8 @@ const header = [
   `// @author       ${meta.author}`,
   '// @match        *://*/*',
   '// @run-at       document-start',
+  // Inject into the page context when possible, so modules can hook page JS.
+  '// @sandbox      JavaScript',
   ...grants.map(g => `// @grant        ${g}`),
   `// @homepageURL  https://github.com/${repo}`,
   `// @updateURL    ${base}/toolkit.meta.js`,
@@ -93,7 +95,7 @@ if (fs.existsSync(readmePath)) {
     '| 模块 | 默认 | 作用站点 | 说明 |',
     '|---|---|---|---|',
     ...modules.map(m =>
-      `| ${m.name} (\`${m.id}\`) | ${m.enabledByDefault ? '开' : '关'} | ${m.match?.length ? m.match.map(String).join(' ') : '全部'} | ${m.description || ''} |`),
+      `| ${m.name} (\`${m.id}\`) | ${m.scope === 'site' ? `按网站（预置 ${(m.defaultSites || []).length} 个）` : (m.enabledByDefault ? '开' : '关')} | ${m.match?.length ? m.match.map(String).join(' ') : '全部'} | ${m.description || ''} |`),
   ].join('\n');
   const readme = fs.readFileSync(readmePath, 'utf8').replace(
     /<!-- modules:start -->[\s\S]*<!-- modules:end -->/,

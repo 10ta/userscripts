@@ -2,6 +2,8 @@
 
 一个脚本，多个小功能。每个功能在 Tampermonkey 菜单里有独立开关（✅ 开 / ⬜ 关），点一下切换并自动刷新页面。只显示对当前网站生效的功能。
 
+开关分两种：全局开关对所有网站生效；标有"（本站）"的是按网站开关，只对当前网站开启或关闭（例如解除复制限制，只在需要的网站上开）。
+
 ## 安装
 
 安装 Tampermonkey（或 Violentmonkey）后，打开下面的链接即可安装，之后会随 Release 自动更新：
@@ -13,7 +15,8 @@ https://github.com/10ta/userscripts/releases/latest/download/toolkit.user.js
 <!-- modules:start -->
 | 模块 | 默认 | 作用站点 | 说明 |
 |---|---|---|---|
-| Twemoji 替换网页 emoji 字体 (`twemoji-everywhere`) | 开 | 全部 | Map Segoe UI Emoji / Apple Color Emoji / Noto Color Emoji to the locally installed Twemoji (COLR) font. Download Twemoji for Windows: https://github.com/10ta/twemoji-color-font/releases/latest/download/Twemoji.ttf|
+| 解除复制/右键限制 (`remove-web-limits`) | 按网站（预置 61 个） | 全部 | Unblock copy, cut, text selection and the context menu on sites that disable them. |
+| Twemoji 替换网页 emoji 字体 (`twemoji-everywhere`) | 开 | 全部 | Map Segoe UI Emoji / Apple Color Emoji / Noto Color Emoji to the locally installed Twemoji (COLR) font. |
 <!-- modules:end -->
 
 （上表由构建脚本根据 `src/modules/` 自动生成，不要手动修改。）
@@ -37,12 +40,17 @@ register({
   description: '一句话说明',
   enabledByDefault: false,          // 首次安装时是否默认开启
   match: [/(^|\.)example\.com$/],   // 只在这些域名生效；省略则对所有网站生效
+  // scope: 'site',                  // 改为按网站开关（菜单显示"（本站）"），此时忽略 enabledByDefault
+  // defaultSites: ['example.com'],  // 按网站开关时，默认开启的网站（含其子域名）
   run(ctx) {
     ctx.addStyle('body { ... }');           // 注入 CSS
     ctx.onReady(() => { /* 操作 DOM */ });  // 等 DOM 就绪
     ctx.get('key', 默认值);                 // 本模块私有存储
     ctx.set('key', 值);
     ctx.log('调试信息');
+    ctx.host;                               // 当前域名
+    ctx.page;                               // 页面真实的 window，用于修改页面自身的 JS
+    ctx.expose(fn);                         // 把函数交给页面 JS 调用前先包一层（Firefox 需要）
   },
 });
 ```
@@ -59,3 +67,8 @@ scripts/new-module.mjs 新建模块模板
 ```
 
 版本号格式为 `年.月.日.构建序号`，保证每次发布都比上一次大，Tampermonkey 能正确识别更新。
+
+## 致谢与许可
+
+`src/modules/remove-web-limits.js` 基于 [Cat73/remove-web-limits](https://github.com/Cat7373/remove-web-limits) 及 [qxin 的修改版](https://github.com/qxinGitHub/Remove-web-limits-) 重写，原项目采用 LGPLv3 许可。
+
