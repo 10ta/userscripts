@@ -24,24 +24,15 @@ jobs:
         with:
           node-version: 22
 
-      # Date-based version that always increases, so Tampermonkey sees every
-      # release as an update: 2026.9.21.<run number>
+      # Fixed-width, date-based version: 2026.0921.00012 (year.MMDD.run number).
+      # - Always increases, so userscript managers see every release as an update.
+      # - Zero-padded, so GitHub's release list (which orders these tags as text)
+      #   shows them in the right order; managers compare parts as numbers.
       - name: Compute version
-        run: echo "VERSION=$(date -u +%Y.%-m.%-d).${{ github.run_number }}" >> "$GITHUB_ENV"
+        run: echo "VERSION=$(date -u +%Y.%m%d).$(printf '%05d' ${{ github.run_number }})" >> "$GITHUB_ENV"
 
       - name: Build
         run: npm run build
-
-      # Keep the auto-generated module table in README in sync with src/modules.
-      - name: Commit README module table
-        if: github.event_name != 'pull_request'
-        run: |
-          if ! git diff --quiet README.md; then
-            git config user.name  "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -am "docs: update module table [skip ci]"
-            git push
-          fi
 
       - uses: actions/upload-artifact@v4
         with:

@@ -209,20 +209,22 @@ function buildMenu() {
       add(label, () => { toggle(m); location.reload(); }, m.description);
     });
 
-    // Local per-site changes of this group: export / clear, shown only when there are any.
-    const diff = exportLocalDiffs(group);
-    if (diff) {
-      add(`${CHILD}📋 导出本地改动`, () => {
-        GM_setClipboard(diff, 'text');
-        alert(`已复制到剪贴板，整理后写入对应模块的 defaultSites 并 push：\n\n${diff}`);
-      });
-      add(`${CHILD}🧹 清除本地改动`, () => {
-        if (confirm(`清除后，这些网站恢复为代码中 defaultSites 的状态。确定清除？\n\n${diff}`)) {
-          clearLocalDiffs(group);
-          location.reload();
-        }
-      });
-    }
+    // Per-site groups always offer export / clear of their local changes.
+    if (!group.some(m => m.scope === 'site')) continue;
+    add(`${CHILD}📋 导出本地改动`, () => {
+      const diff = exportLocalDiffs(group);
+      if (!diff) return alert('没有本地改动。');
+      GM_setClipboard(diff, 'text');
+      alert(`已复制到剪贴板，整理后写入对应模块的 defaultSites 并 push：\n\n${diff}`);
+    });
+    add(`${CHILD}🧹 清除本地改动`, () => {
+      const diff = exportLocalDiffs(group);
+      if (!diff) return alert('没有本地改动。');
+      if (confirm(`清除后，这些网站恢复为代码中 defaultSites 的状态。确定清除？\n\n${diff}`)) {
+        clearLocalDiffs(group);
+        location.reload();
+      }
+    });
   }
 }
 
