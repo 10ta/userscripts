@@ -1,0 +1,16 @@
+{
+  "name": "toolkit",
+  "private": true,
+  "description": "自用油猴脚本合集：每个功能在 Tampermonkey 菜单里有独立开关",
+  "type": "module",
+  "userscript": {
+    "name": "Toolkit",
+    "namespace": "https://github.com/10ta/userscripts",
+    "repository": "10ta/userscripts",
+    "author": "10ta"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "new": "node scripts/new-module.mjs"
+  }
+}

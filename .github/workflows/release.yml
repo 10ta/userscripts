@@ -1,0 +1,61 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'scripts/**'
+      - 'package.json'
+      - '.github/workflows/release.yml'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Date-based version that always increases, so Tampermonkey sees every
+      # release as an update: 2026.9.21.<run number>
+      - name: Compute version
+        run: echo "VERSION=$(date -u +%Y.%-m.%-d).${{ github.run_number }}" >> "$GITHUB_ENV"
+
+      - name: Build
+        run: npm run build
+
+      # Keep the auto-generated module table in README in sync with src/modules.
+      - name: Commit README module table
+        if: github.event_name != 'pull_request'
+        run: |
+          if ! git diff --quiet README.md; then
+            git config user.name  "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -am "docs: update module table [skip ci]"
+            git push
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: toolkit-${{ env.VERSION }}
+          path: dist/
+
+      - name: Publish release
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: Toolkit ${{ env.VERSION }}
+          make_latest: true
+          fail_on_unmatched_files: true
+          files: |
+            dist/toolkit.user.js
+            dist/toolkit.meta.js
