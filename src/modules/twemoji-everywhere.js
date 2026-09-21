@@ -1,3 +1,6 @@
+// 字体下载
+// https://github.com/10ta/twemoji-color-font/releases/latest/download/Twemoji.ttf
+
 register({
   id: 'twemoji-everywhere',
   name: 'Twemoji 替换',
