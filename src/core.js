@@ -190,7 +190,14 @@ const CHILD = '└ ';
 function buildMenu() {
   for (const h of menuHandles) GM_unregisterMenuCommand(h);
   menuHandles = [];
-  const add = (label, fn, title) => menuHandles.push(GM_registerMenuCommand(label, fn, { title: title || '' }));
+  // Script managers treat commands with the same caption as one command: a later
+  // registration silently replaces the earlier one (e.g. the second "导出本地改动").
+  // Keep every caption unique with invisible zero-width spaces, and pass a unique id.
+  let seq = 0;
+  const add = (label, fn, title) => {
+    seq += 1;
+    menuHandles.push(GM_registerMenuCommand(label + '\u200B'.repeat(seq), fn, { id: `toolkit-${seq}`, title: title || '' }));
+  };
 
   const visible = MODULES.filter(matchesPage);
   // A module with `parent: '<id>'` is listed (indented) right under that module.
