@@ -10,7 +10,8 @@
  *     enabledByDefault: true,                // optional, default false
  *     match:       [/example\.com$/],        // optional host regexes; default = all sites
  *     scope:       'site',                   // optional: toggle per website instead of globally
- *     defaultSites: ['example.com'],         // with scope 'site': sites enabled out of the box
+ *     defaultSites: ['example.com'],         // with scope 'site': exceptions to enabledByDefault
+ *                                            //   (default off: sites where ON; default on: sites where OFF)
  *     run(ctx) { ... },                      // runs at document-start when enabled
  *   }
  *
@@ -40,11 +41,13 @@ const storageKey = id => `enabled:${id}`;
 /*
  * Per-site modules (scope: 'site').
  *
- * The official site list lives in code (defaultSites), so it is versioned in git
- * and shared by every browser. Menu toggles only record local differences:
- *   sites:<id>:add     sites turned on here that are not in defaultSites
- *   sites:<id>:remove  sites turned off here although defaultSites covers them
- * Effective state = (defaultSites ∪ add) − remove.
+ * Official state lives in code and is shared by every browser through git:
+ *   enabledByDefault: false -> off everywhere, defaultSites lists where it is ON
+ *   enabledByDefault: true  -> on everywhere,  defaultSites lists where it is OFF
+ * Menu toggles only record local differences on top of that:
+ *   sites:<id>:add     sites turned on in this browser
+ *   sites:<id>:remove  sites turned off in this browser
+ * Local choices win over the official state.
  * "example.com" in any list also covers www.example.com, a.b.example.com, ...
  */
 const addKey = id => `sites:${id}:add`;
@@ -68,6 +71,7 @@ function setLocalDiff(mod, { add, remove }) {
 
 // Earlier versions stored the whole list under sites:<id>; convert it to a diff once.
 function migrateSites(mod) {
+  if (mod.enabledByDefault) return; // legacy format only existed for default-off modules
   const legacyKey = `sites:${mod.id}`;
   const legacy = GM_getValue(legacyKey, null);
   if (!Array.isArray(legacy)) return;
@@ -79,12 +83,18 @@ function migrateSites(mod) {
   GM_deleteValue(legacyKey);
 }
 
+// Official (code) state for a host, before local changes.
+function officialState(mod, host) {
+  return !!mod.enabledByDefault !== hostInList(mod.defaultSites || [], host);
+}
+
 function isEnabled(mod) {
   if (mod.scope !== 'site') return GM_getValue(storageKey(mod.id), !!mod.enabledByDefault);
   const host = location.hostname;
   const { add, remove } = getLocalDiff(mod);
   if (hostInList(remove, host)) return false;
-  return hostInList(mod.defaultSites || [], host) || hostInList(add, host);
+  if (hostInList(add, host)) return true;
+  return officialState(mod, host);
 }
 
 function toggle(mod) {
@@ -93,15 +103,14 @@ function toggle(mod) {
     return;
   }
   const host = location.hostname;
-  const inDefaults = hostInList(mod.defaultSites || [], host);
+  const official = officialState(mod, host);
   let { add, remove } = getLocalDiff(mod);
-  if (isEnabled(mod)) {
-    add = add.filter(s => !covers(s, host));
-    if (inDefaults) remove = [...remove, host];
-  } else {
-    remove = remove.filter(s => !covers(s, host));
-    if (!inDefaults) add = [...add, host];
-  }
+  // Drop any local entry covering this host, then record one only if the
+  // wanted state differs from the official one.
+  add = add.filter(s => !covers(s, host));
+  remove = remove.filter(s => !covers(s, host));
+  const want = !isEnabled(mod);
+  if (want !== official) (want ? add : remove).push(host);
   setLocalDiff(mod, { add, remove });
 }
 
@@ -112,9 +121,13 @@ function exportLocalDiffs() {
     const { add, remove } = getLocalDiff(mod);
     if (!add.length && !remove.length) continue;
     const quote = list => list.map(s => `'${s}'`).join(', ');
-    lines.push(`// ${mod.id} (${mod.name})`);
-    if (add.length) lines.push(`// 本地额外开启 -> 加入 defaultSites:`, `${quote(add)},`);
-    if (remove.length) lines.push(`// 本地额外关闭 -> 从 defaultSites 删除:`, `${quote(remove)}`);
+    lines.push(`// ${mod.id} (${mod.name})，默认${mod.enabledByDefault ? '开启' : '关闭'}`);
+    // Default-off: defaultSites = where it's on. Default-on: defaultSites = where it's off.
+    const [toList, fromList] = mod.enabledByDefault ? [remove, add] : [add, remove];
+    const toLabel = mod.enabledByDefault ? '本地额外关闭' : '本地额外开启';
+    const fromLabel = mod.enabledByDefault ? '本地额外开启' : '本地额外关闭';
+    if (toList.length) lines.push(`// ${toLabel} -> 加入 defaultSites:`, `${quote(toList)},`);
+    if (fromList.length) lines.push(`// ${fromLabel} -> 从 defaultSites 删除:`, `${quote(fromList)}`);
     lines.push('');
   }
   return lines.join('\n');
@@ -188,11 +201,11 @@ function buildMenu() {
   // Local per-site changes: offer export / clear only when there are any.
   const diff = exportLocalDiffs();
   if (diff) {
-    menuHandles.push(GM_registerMenuCommand('📋 导出网址限制改动', () => {
+    menuHandles.push(GM_registerMenuCommand('📋 导出本地网站改动', () => {
       GM_setClipboard(diff, 'text');
       alert(`已复制到剪贴板，整理后写入对应模块的 defaultSites 并 push：\n\n${diff}`);
     }));
-    menuHandles.push(GM_registerMenuCommand('🧹 清除网址限制改动', () => {
+    menuHandles.push(GM_registerMenuCommand('🧹 清除本地网站改动', () => {
       if (confirm(`清除后，各网站恢复为代码中 defaultSites 的状态。确定清除？\n\n${diff}`)) {
         clearLocalDiffs();
         location.reload();

@@ -36,7 +36,6 @@ register({
   description: 'Unblock copy, cut, text selection and the context menu on sites that disable them.',
   scope: 'site',
   defaultSites: [
-    'kkys20.com',
     '3g.163.com', 'b.faloo.com', 'bbs.coocaa.com', 'boke112.com', 'book.hjsm.tom.com',
     'book.zhulang.com', 'book.zongheng.com', 'chokstick.com', 'chuangshi.qq.com', 'city.udn.com',
     'cutelisa55.pixnet.net', 'doc.guandang.net', 'huayu.baidu.com', 'imac.hk', 'leetcode.cn',
