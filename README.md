@@ -17,8 +17,9 @@ https://github.com/10ta/userscripts/releases/latest/download/toolkit.user.js
 |---|---|---|---|
 | 字体替换 (`font-inject`) | 按网站（预置 0 个） | 全部 | Use my own sans / serif / mono font stacks on pages, keeping icon fonts intact. |
 | 字体替换：衬线 (`font-serif`) | 按网站（预置 0 个） | 全部 | Use the serif stack of font-inject on this site. |
+| 等宽字体替换（代码） (`mono-font`) | 开 | 全部 | Force code / pre / kbd / samp to Inconsolata + LXGW Neo XiHei + Twemoji. |
 | 解除复制/右键限制 (`remove-web-limits`) | 按网站（预置 61 个） | 全部 | Unblock copy, cut, text selection and the context menu on sites that disable them. |
-| Twemoji 替换网页 emoji 字体 (`twemoji-everywhere`) | 开 | 全部 | Map Segoe UI Emoji / Apple Color Emoji / Noto Color Emoji to the locally installed Twemoji (COLR) font. |
+| Twemoji 替换网页 emoji 字体 (`twemoji-everywhere`) | 开 | 全部 | Map common emoji font names to the locally installed Twemoji (COLR) font. |
 <!-- modules:end -->
 
 （上表由构建脚本根据 `src/modules/` 自动生成，不要手动修改。）
