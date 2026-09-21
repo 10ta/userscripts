@@ -16,10 +16,9 @@ https://github.com/10ta/userscripts/releases/latest/download/toolkit.user.js
 | 模块 | 默认 | 作用站点 | 说明 |
 |---|---|---|---|
 | 字体替换 (`font-inject`) | 按网站（预置 0 个） | 全部 | Use my own sans / serif / mono font stacks on pages, keeping icon fonts intact. |
-| 字体替换：衬线 (`font-serif`) | 按网站（预置 0 个） | 全部 | Use the serif stack of font-inject on this site. |
-| 等宽字体替换（代码） (`mono-font`) | 开 | 全部 | Force code / pre / kbd / samp to Inconsolata + LXGW Neo XiHei + Twemoji. |
+| 改用衬线字体 (`font-serif`) | 按网站（预置 0 个） | 全部 | Use the serif stack of font-inject on this site. |
 | 解除复制/右键限制 (`remove-web-limits`) | 按网站（预置 61 个） | 全部 | Unblock copy, cut, text selection and the context menu on sites that disable them. |
-| Twemoji 替换网页 emoji 字体 (`twemoji-everywhere`) | 开 | 全部 | Map common emoji font names to the locally installed Twemoji (COLR) font. |
+| Twemoji 替换 (`twemoji-everywhere`) | 开 | 全部 | Map common emoji font names to the locally installed Twemoji (COLR) font. |
 <!-- modules:end -->
 
 （上表由构建脚本根据 `src/modules/` 自动生成，不要手动修改。）
@@ -29,8 +28,8 @@ https://github.com/10ta/userscripts/releases/latest/download/toolkit.user.js
 按网站开关的"正式名单"是模块代码里的 `enabledByDefault` 加上例外名单 `defaultSites`，跟随仓库同步到所有浏览器。在菜单里切换只会在当前浏览器记录**本地改动**（额外开启 / 额外关闭的网站），叠加在正式名单之上：
 
 - 本地改动保存在 Tampermonkey 的脚本存储里，脚本更新不会丢失；删除脚本、卸载扩展或重置浏览器时会丢失。每个浏览器各自一份。
-- 有本地改动时，菜单会出现 **📋 导出本地网站改动**：复制成可以直接粘贴进 `defaultSites` 的格式。整理进代码并 push 后，所有浏览器都会生效。
-- 写回代码后，可以用 **🧹 清除本地网站改动** 清空本地记录（不清也没关系，已经写进名单的"额外开启"会自动变成多余项）。
+- 有本地改动时，对应模块下面会出现 **📋 导出本地改动**：复制成可以直接粘贴进 `defaultSites` 的格式。整理进代码并 push 后，所有浏览器都会生效。
+- 写回代码后，可以用 **🧹 清除本地改动** 清空本地记录（不清也没关系，已经写进名单的"额外开启"会自动变成多余项）。
 
 ## 新增功能
 
@@ -51,6 +50,7 @@ register({
   description: '一句话说明',
   enabledByDefault: false,          // 首次安装时是否默认开启
   match: [/(^|\.)example\.com$/],   // 只在这些域名生效；省略则对所有网站生效
+  // parent: 'font-inject',          // 在菜单中缩进显示在另一个模块下面（作为它的子选项）
   // scope: 'site',                  // 改为按网站开关（菜单显示"（本站）"）
   // defaultSites: ['example.com'],  // 按网站开关时的例外名单（含子域名）：
   //                                 //   enabledByDefault 为 false 时是"默认开启的网站"，为 true 时是"默认关闭的网站"

@@ -4,7 +4,8 @@
  */
 register({
   id: 'font-serif',
-  name: '字体替换：衬线',
+  name: '改用衬线字体',
+  parent: 'font-inject',
   description: 'Use the serif stack of font-inject on this site.',
   scope: 'site',
   enabledByDefault: false,

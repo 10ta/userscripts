@@ -9,6 +9,7 @@
  *     description: '...',                    // shown in README / tooltip
  *     enabledByDefault: true,                // optional, default false
  *     match:       [/example\.com$/],        // optional host regexes; default = all sites
+ *     parent:      'font-inject',            // optional: list this module indented under another
  *     scope:       'site',                   // optional: toggle per website instead of globally
  *     defaultSites: ['example.com'],         // with scope 'site': exceptions to enabledByDefault
  *                                            //   (default off: sites where ON; default on: sites where OFF)
@@ -115,9 +116,9 @@ function toggle(mod) {
 }
 
 // Text ready to paste into the modules' defaultSites arrays.
-function exportLocalDiffs() {
+function exportLocalDiffs(mods) {
   const lines = [];
-  for (const mod of MODULES.filter(m => m.scope === 'site')) {
+  for (const mod of mods.filter(m => m.scope === 'site')) {
     const { add, remove } = getLocalDiff(mod);
     if (!add.length && !remove.length) continue;
     const quote = list => list.map(s => `'${s}'`).join(', ');
@@ -133,8 +134,8 @@ function exportLocalDiffs() {
   return lines.join('\n');
 }
 
-function clearLocalDiffs() {
-  for (const mod of MODULES.filter(m => m.scope === 'site')) setLocalDiff(mod, { add: [], remove: [] });
+function clearLocalDiffs(mods) {
+  for (const mod of mods.filter(m => m.scope === 'site')) setLocalDiff(mod, { add: [], remove: [] });
 }
 
 function matchesPage(mod) {
@@ -183,34 +184,38 @@ function runModules() {
 // Toggling reloads the page, because most modules act at document-start.
 let menuHandles = [];
 
+// Userscript menus are flat, so child items are drawn with a "└" prefix.
+const CHILD = '└ ';
+
 function buildMenu() {
   for (const h of menuHandles) GM_unregisterMenuCommand(h);
   menuHandles = [];
+  const add = (label, fn, title) => menuHandles.push(GM_registerMenuCommand(label, fn, { title: title || '' }));
 
-  for (const mod of MODULES.filter(matchesPage)) {
-    const on = isEnabled(mod);
-    const label = `${on ? '✅' : '⬜'} ${mod.name}${mod.scope === 'site' ? '（本站）' : ''}`;
-    menuHandles.push(
-      GM_registerMenuCommand(label, () => {
-        toggle(mod);
-        location.reload();
-      }, { title: mod.description || '' })
-    );
-  }
+  const visible = MODULES.filter(matchesPage);
+  // A module with `parent: '<id>'` is listed (indented) right under that module.
+  for (const mod of visible.filter(m => !m.parent || !visible.some(p => p.id === m.parent))) {
+    const group = [mod, ...visible.filter(m => m.parent === mod.id)];
 
-  // Local per-site changes: offer export / clear only when there are any.
-  const diff = exportLocalDiffs();
-  if (diff) {
-    menuHandles.push(GM_registerMenuCommand('📋 导出本地网站改动', () => {
-      GM_setClipboard(diff, 'text');
-      alert(`已复制到剪贴板，整理后写入对应模块的 defaultSites 并 push：\n\n${diff}`);
-    }));
-    menuHandles.push(GM_registerMenuCommand('🧹 清除本地网站改动', () => {
-      if (confirm(`清除后，各网站恢复为代码中 defaultSites 的状态。确定清除？\n\n${diff}`)) {
-        clearLocalDiffs();
-        location.reload();
-      }
-    }));
+    group.forEach((m, i) => {
+      const label = `${i ? CHILD : ''}${isEnabled(m) ? '✅' : '⬜'} ${m.name}${m.scope === 'site' ? '（本站）' : ''}`;
+      add(label, () => { toggle(m); location.reload(); }, m.description);
+    });
+
+    // Local per-site changes of this group: export / clear, shown only when there are any.
+    const diff = exportLocalDiffs(group);
+    if (diff) {
+      add(`${CHILD}📋 导出本地改动`, () => {
+        GM_setClipboard(diff, 'text');
+        alert(`已复制到剪贴板，整理后写入对应模块的 defaultSites 并 push：\n\n${diff}`);
+      });
+      add(`${CHILD}🧹 清除本地改动`, () => {
+        if (confirm(`清除后，这些网站恢复为代码中 defaultSites 的状态。确定清除？\n\n${diff}`)) {
+          clearLocalDiffs(group);
+          location.reload();
+        }
+      });
+    }
   }
 }
 

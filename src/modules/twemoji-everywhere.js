@@ -1,6 +1,6 @@
 register({
   id: 'twemoji-everywhere',
-  name: 'Twemoji 替换网页 emoji 字体',
+  name: 'Twemoji 替换',
   description: 'Map common emoji font names to the locally installed Twemoji (COLR) font.',
   enabledByDefault: true,
   run(ctx) {
