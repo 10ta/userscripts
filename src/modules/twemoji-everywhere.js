@@ -1,11 +1,15 @@
 register({
   id: 'twemoji-everywhere',
   name: 'Twemoji 替换网页 emoji 字体',
-  description: 'Map Segoe UI Emoji / Apple Color Emoji / Noto Color Emoji to the locally installed Twemoji (COLR) font.',
+  description: 'Map common emoji font names to the locally installed Twemoji (COLR) font.',
   enabledByDefault: true,
   run(ctx) {
-    const src = 'local("Twemoji Regular"), local("Twemoji-Regular")';
-    const names = ['Segoe UI Emoji', 'Segoe UI Symbol', 'Apple Color Emoji', 'Noto Color Emoji'];
+    const src = 'local("Twemoji Regular"), local("Twemoji")';
+    const names = [
+      'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Android Emoji',
+      'EmojiSymbols', 'EmojiOne Mozilla', 'Twemoji Mozilla', 'Segoe UI Symbol',
+      'Noto Color Emoji Compat',
+    ];
     ctx.addStyle(names.map(n => `@font-face { font-family: "${n}"; src: ${src}; }`).join('\n'));
   },
 });
