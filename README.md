@@ -71,7 +71,7 @@ register({
 
 ## 目录结构
 
-```
+``` bash
 src/core.js           模块注册、开关菜单、运行时
 src/modules/*.js      每个文件一个功能（以 _ 开头的文件不会被打包）
 scripts/build.mjs     构建：拼接、语法检查、生成 README 功能表
@@ -79,6 +79,17 @@ scripts/new-module.mjs 新建模块模板
 ```
 
 版本号格式为 `年.月.日.构建序号`，保证每次发布都比上一次大，Tampermonkey 能正确识别更新。
+
+## Debug
+
+在控制台查询实际调用名字: 当前示例为merri开头的
+
+```javascript
+(await queryLocalFonts())
+  .filter(f => /merri/i.test(f.family))
+  .map(f => `${f.family} | ${f.fullName} | ${f.style}`)
+
+```  
 
 ## 致谢与许可
 
