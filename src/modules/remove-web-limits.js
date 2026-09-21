@@ -1,11 +1,6 @@
 /*
  * Lift copy / cut / select / right-click restrictions on chosen websites.
  *
- * Based on "Remove web limits" by Cat73 (https://github.com/Cat7373/remove-web-limits)
- * and its modified version by iqxin (https://github.com/qxinGitHub/Remove-web-limits-),
- * licensed LGPLv3. Rewritten for Toolkit: per-site toggle in the menu instead of
- * the floating button; same event lists and default site list.
- *
  * How it works: at document-start, before any page script runs, capture-phase
  * listeners on window stop the restricted events from reaching page handlers
  * (addEventListener ones and inline oncopy/oncontextmenu alike), while the

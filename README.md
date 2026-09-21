@@ -80,7 +80,3 @@ scripts/new-module.mjs 新建模块模板
 
 版本号格式为 `年.月.日.构建序号`，保证每次发布都比上一次大，Tampermonkey 能正确识别更新。
 
-## 致谢与许可
-
-`src/modules/remove-web-limits.js` 基于 [Cat73/remove-web-limits](https://github.com/Cat7373/remove-web-limits) 及 [qxin 的修改版](https://github.com/qxinGitHub/Remove-web-limits-) 重写，原项目采用 LGPLv3 许可。
-
