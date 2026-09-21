@@ -13,7 +13,7 @@ https://github.com/10ta/userscripts/releases/latest/download/toolkit.user.js
 <!-- modules:start -->
 | 模块 | 默认 | 作用站点 | 说明 |
 |---|---|---|---|
-| Twemoji 替换网页 emoji 字体 (`twemoji-everywhere`) | 开 | 全部 | Map Segoe UI Emoji / Apple Color Emoji / Noto Color Emoji to the locally installed Twemoji (COLR) font. |
+| Twemoji 替换网页 emoji 字体 (`twemoji-everywhere`) | 开 | 全部 | Map Segoe UI Emoji / Apple Color Emoji / Noto Color Emoji to the locally installed Twemoji (COLR) font. Download Twemoji for Windows: https://github.com/10ta/twemoji-color-font/releases/latest/download/Twemoji.ttf|
 <!-- modules:end -->
 
 （上表由构建脚本根据 `src/modules/` 自动生成，不要手动修改。）
