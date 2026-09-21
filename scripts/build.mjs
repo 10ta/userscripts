@@ -43,7 +43,7 @@ if (dup) {
 
 // Aggregate @match from modules is not needed: core filters by host at runtime.
 const grants = [
-  'GM_addStyle', 'GM_getValue', 'GM_setValue',
+  'GM_addStyle', 'GM_getValue', 'GM_setValue', 'GM_deleteValue', 'GM_setClipboard',
   'GM_registerMenuCommand', 'GM_unregisterMenuCommand', 'unsafeWindow',
 ];
 
