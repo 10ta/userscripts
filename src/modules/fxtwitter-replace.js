@@ -46,6 +46,10 @@ register({
  * button (in timelines and on the post page alike). The English label is a
  * fallback in case the order changes.
  */
+// Buttons other scripts build by cloning the Share button (so they carry its
+// aria-label) stay visible, e.g. Twitter Media Downloader's `.tmd-down`.
+const KEEP = '.tmd-down';
+
 register({
   id: 'x-hide-share',
   name: '隐藏分享按钮',
@@ -55,8 +59,8 @@ register({
   match: [/(^|\.)x\.com$/, /(^|\.)twitter\.com$/],
   run(ctx) {
     ctx.addStyle(`
-      [role="group"] > :has([data-testid="bookmark"], [data-testid="removeBookmark"]) + *,
-      [role="group"] button[aria-label="Share post"] {
+      [role="group"] > :has([data-testid="bookmark"], [data-testid="removeBookmark"]) + :not(${KEEP}),
+      [role="group"] button[aria-label="Share post"]:not(${KEEP}, ${KEEP} *) {
         display: none !important;
       }
     `);
