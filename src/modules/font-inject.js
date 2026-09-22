@@ -12,8 +12,8 @@
  * Use the menu to turn this module off for a site that breaks.
  */
 const FONT_STACKS = {
-  sans: '"Noto Sans", "Noto Sans JP", "Noto Sans SC", "Twemoji", sans-serif',
-  serif: '"Merriweather 18pt", "Klee One", "LXGW WenKai GB", "Twemoji", serif',
+  sans: '"Noto Sans", "Noto Sans SC", "Noto Sans JP", "Twemoji", sans-serif',
+  serif: '"Merriweather 18pt", "LXGW WenKai GB", "Klee One", "Twemoji", serif',
   mono: '"Inconsolata", "LXGW Neo XiHei", "Twemoji", monospace',
 };
 
