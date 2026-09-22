@@ -2,10 +2,11 @@
  * Turn the timestamp link of X / Twitter posts (the post's permalink) into an
  * fxtwitter.com link without tracking parameters:
  *
- * No DOM scanning or observers: the link's href is rewritten just in time, when
- * the pointer or keyboard focus reaches it. So "Copy link address", middle-click,
- * Ctrl/Cmd-click and dragging the link all get the fxtwitter URL, while a plain
- * left click keeps X's normal in-app navigation (X routes it itself).
+ * - Plain left click (or Enter) on the timestamp copies the fxtwitter link and
+ *   shows a short toast, instead of opening the post.
+ * - The href itself is rewritten just in time (pointer / focus), so "Copy link
+ *   address", middle-click, Ctrl/Cmd-click and dragging also give the fxtwitter URL.
+ * No DOM scanning or observers: everything reacts to events on the timestamp link.
  */
 const FX_HOST = 'fxtwitter.com';
 const STATUS_PATH = /^\/([^/]+)\/status\/(\d+)/;
@@ -19,27 +20,68 @@ function toFx(href) {
 
 register({
   id: 'fxtwitter-link',
-  name: '时间戳链接转 fxtwitter',
+  name: '点时间戳复制 fxtwitter 链接',
   description: 'Post timestamp links on X/Twitter point to fxtwitter.com (tracking parameters removed).',
   enabledByDefault: true,
   match: [/(^|\.)x\.com$/, /(^|\.)twitter\.com$/],
-  run() {
-    const rewrite = e => {
+  run(ctx) {
+    // The post's timestamp link: an <a> that wraps a <time> element.
+    const timestampLink = e => {
       const a = e.target instanceof Element && e.target.closest('a[href]');
-      if (!a || !a.querySelector('time')) return; // only the timestamp link of a post
-      const fx = toFx(a.href);
+      return a && a.querySelector('time') ? a : null;
+    };
+
+    const rewrite = e => {
+      const a = timestampLink(e);
+      const fx = a && toFx(a.href);
       if (fx && a.href !== fx) a.setAttribute('href', fx);
     };
     for (const type of ['pointerover', 'focusin', 'contextmenu', 'mousedown']) {
       document.addEventListener(type, rewrite, true);
     }
+
+    ctx.addStyle(`
+      #tk-fx-toast {
+        position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%);
+        z-index: 2147483647; padding: 8px 16px; border-radius: 999px;
+        background: rgb(29, 155, 240); color: #fff; font: 14px/1.4 system-ui, sans-serif;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, .3); pointer-events: none;
+        transition: opacity .2s; opacity: 0;
+      }
+      #tk-fx-toast.show { opacity: 1; }
+    `);
+    let toastTimer;
+    const toast = text => {
+      let el = document.getElementById('tk-fx-toast');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'tk-fx-toast';
+        document.body.appendChild(el);
+      }
+      el.textContent = text;
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), 1500);
+    };
+
+    // Registered on document in the capture phase, so it runs before X's own
+    // (React) click handling and can stop the in-app navigation.
+    document.addEventListener('click', e => {
+      if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+      const a = timestampLink(e);
+      const fx = a && toFx(a.href);
+      if (!fx) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      GM_setClipboard(fx, 'text');
+      toast('已复制 fxtwitter 链接');
+    }, true);
   },
 });
 
 /*
  * Hide the Share button in X / Twitter post action bars. Pure CSS.
- * (Its main use, copying the post link, is covered above: right-click the
- * timestamp -> "Copy link address" gives the fxtwitter URL.)
+ * (Its main use, copying the post link, is covered above: click the timestamp.)
  *
  * X has no data-testid on the Share button, and its aria-label depends on the UI
  * language, so it is located by position: the action right after the Bookmark
