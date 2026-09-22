@@ -12,7 +12,7 @@
  * Use the menu to turn this module off for a site that breaks.
  */
 const FONT_STACKS = {
-  sans: '"Noto Sans", "Noto Sans JP", "Noto Sans", "Twemoji", sans-serif',
+  sans: '"Noto Sans", "Noto Sans JP", "Noto Sans SC", "Twemoji", sans-serif',
   serif: '"Merriweather 18pt", "Klee One", "LXGW WenKai GB", "Twemoji", serif',
   mono: '"Inconsolata", "LXGW Neo XiHei", "Twemoji", monospace',
 };
