@@ -60,8 +60,9 @@ register({
       observer.observe(video);
     };
 
-    document.addEventListener('volumechange', e => {
-      const video = e.target;
+    // Shared by both listeners below: decide whether this unmuted video gets to
+    // stay that way, or gets muted back down.
+    const check = video => {
       if (muting || !(video instanceof HTMLMediaElement) || video.muted) return;
 
       if (video === allowed) return;                       // already approved
@@ -73,6 +74,16 @@ register({
       revoke();
       allowed = video;
       watch(video);
-    }, true);
+    };
+
+    // volumechange: catches the case already unmuted, e.g. dragging the volume
+    // slider, or X flipping video.muted on an existing element.
+    document.addEventListener('volumechange', e => check(e.target), true);
+
+    // play: catches a video that is unmuted from the very start — a freshly
+    // loaded/replaced <video> whose muted property never actually "changes",
+    // so volumechange never fires for it. This covers both a newly played video
+    // and one scrolled back into view that X re-renders as a new element.
+    document.addEventListener('play', e => check(e.target), true);
   },
 });
