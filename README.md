@@ -17,8 +17,11 @@ https://github.com/10ta/userscripts/releases/latest/download/toolkit.user.js
 |---|---|---|---|
 | 字体替换 (`font-inject`) | 按网站（预置 0 个） | 全部 | Use my own sans / serif / mono font stacks on pages, keeping icon fonts intact. |
 | 改用衬线字体 (`font-serif`) | 按网站（预置 0 个） | 全部 | Use the serif stack of font-inject on this site. |
+| 点时间戳复制 fxtwitter 链接 (`fxtwitter-link`) | 开 | /(^|\.)x\.com$/ /(^|\.)twitter\.com$/ | Post timestamp links on X/Twitter point to fxtwitter.com (tracking parameters removed). |
+| 隐藏分享按钮 (`x-hide-share`) | 开 | /(^|\.)x\.com$/ /(^|\.)twitter\.com$/ | Hide the Share button under posts on X/Twitter. |
 | 解除复制/右键限制 (`remove-web-limits`) | 按网站（预置 61 个） | 全部 | Unblock copy, cut, text selection and the context menu on sites that disable them. |
-| Twemoji 替换 (`twemoji-everywhere`) | 开 | 全部 | Map common emoji font names to the locally installed Twemoji (COLR) font.  https://github.com/10ta/twemoji-color-font/releases/latest/download/Twemoji.ttf |
+| Twemoji 替换 (`twemoji-everywhere`) | 开 | 全部 | Map common emoji font names to the locally installed Twemoji (COLR) font. https://github.com/10ta/twemoji-color-font/releases/latest/download/Twemoji.ttf |
+| 视频保持静音 (`x-video-mute`) | 开 | /(^|\.)x\.com$/ /(^|\.)twitter\.com$/ | Keep X/Twitter videos muted until unmuted by hand; only one video at a time, muted again when scrolled away. |
 <!-- modules:end -->
 
 （上表由构建脚本根据 `src/modules/` 自动生成，不要手动修改。）
@@ -78,7 +81,7 @@ scripts/build.mjs     构建：拼接、语法检查、生成 README 功能表
 scripts/new-module.mjs 新建模块模板
 ```
 
-版本号格式为 `年.月.日.构建序号`，保证每次发布都比上一次大，Tampermonkey 能正确识别更新。
+版本号格式为 `年.月日.构建序号`（月日、构建序号补零，如 `2026.0922.00020`），保证按数字比较时始终递增，Tampermonkey 能正确识别更新，GitHub 的 Release/Tag 列表也能按正确顺序排列。
 
 ## Debug
 
@@ -89,7 +92,7 @@ scripts/new-module.mjs 新建模块模板
   .filter(f => /merri/i.test(f.family))
   .map(f => `${f.family} | ${f.fullName} | ${f.style}`)
 
-```  
+```
 
 ## 致谢与许可
 
