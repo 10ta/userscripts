@@ -1,89 +1,105 @@
 /*
- * Keep X / Twitter videos muted unless I unmute them myself.
+ * Keep X / Twitter videos muted unless I turn the sound on myself.
  *
- * - Anything that unmutes a video without a user action (X restoring the last
- *   volume, autoplay, switching posts) is undone immediately.
- * - Only one video may have sound: unmuting another one mutes the previous.
- * - Once unmuted, the video is muted again as soon as less than half of it is
- *   on screen, and the permission is revoked (scrolling back keeps it muted).
+ * One rule: any change TOWARD sound needs a recent action of mine; any AUTOMATIC
+ * stop takes the sound away. At most one video has sound at a time.
  *
- * Event driven only: a capture-phase volumechange listener plus one
- * IntersectionObserver for the video that currently has sound.
+ *   play / volumechange, video has sound
+ *     - it is the video I allowed          -> keep
+ *     - I just used a player control       -> allow it (and mute the previous one)
+ *     - otherwise                          -> mute
+ *   the allowed video
+ *     - gets muted (by anyone)             -> permission revoked
+ *     - pauses without an action of mine   -> mute + revoke   (scrolled away, removed, ended)
+ *     - pauses right after I clicked/keyed -> keep            (my own pause)
+ *     - leaves the screen completely       -> mute + revoke
+ *
+ * Event driven only. Global capture listeners for play/volumechange; the pause
+ * listener and the IntersectionObserver are attached to the one allowed video
+ * only (pause is listened on the element itself, so it is still heard when X
+ * removes the element from the page), and detached when permission is revoked.
  */
-const GESTURE_MS = 500;      // a volumechange this soon after a click/keypress is mine
-const VISIBLE_RATIO = 0.5;   // below this much of the video on screen -> mute again
+const ACTION_MS = 500; // a change this soon after my click / keypress counts as mine
+
+// Keys that act on the player: mute, play/pause, seek.
+const PLAYER_KEYS = new Set(['m', 'M', 'k', 'K', ' ', 'ArrowLeft', 'ArrowRight', 'j', 'J', 'l', 'L']);
 
 register({
   id: 'x-video-mute',
   name: '视频保持静音',
-  description: 'Keep X/Twitter videos muted until unmuted by hand; only one video at a time, muted again when scrolled away.',
+  description: 'Keep X/Twitter videos muted until unmuted by hand; one video at a time, muted again when it stops or leaves the screen.',
   enabledByDefault: true,
   match: [/(^|\.)x\.com$/, /(^|\.)twitter\.com$/],
   run() {
-    let lastGesture = 0;
-    let allowed = null;      // the one video allowed to have sound
-    let observer = null;
-    let muting = false;      // set while we mute, so our own change is ignored
+    // Two strengths of "recent action of mine":
+    //   lastControl — a player control (button, slider, player key): may turn sound ON.
+    //   lastAction  — any click / player key: marks a pause as mine (clicking the
+    //                 video surface to pause counts).
+    let lastControl = 0;
+    let lastAction = 0;
+    const recent = t => Date.now() - t <= ACTION_MS;
 
-    // Only button-like targets count: clicking the video itself plays it or opens
-    // the post, and X may unmute as part of that — which is what we want to block.
-    const onGesture = e => {
+    document.addEventListener('pointerdown', e => {
       if (!e.isTrusted) return;
+      lastAction = Date.now();
       const el = e.target instanceof Element ? e.target : null;
-      if (e.type === 'keydown' || (el && el.closest('button, [role="button"], input[type="range"]'))) {
-        lastGesture = Date.now();
-      }
-    };
-    for (const type of ['pointerdown', 'keydown']) document.addEventListener(type, onGesture, true);
+      if (el && el.closest('button, [role="button"], [role="slider"], input[type="range"]')) lastControl = lastAction;
+    }, true);
+    document.addEventListener('keydown', e => {
+      if (!e.isTrusted || !PLAYER_KEYS.has(e.key)) return;
+      const el = e.target instanceof Element ? e.target : null;
+      if (el && el.closest('input, textarea, [contenteditable=""], [contenteditable="true"]')) return; // typing, not the player
+      lastAction = lastControl = Date.now();
+    }, true);
 
-    const mute = video => {
-      muting = true;
-      video.muted = true;
-      muting = false;
-    };
+    let allowed = null; // { video, onPause, observer } — the one video allowed to have sound
+
+    const mute = video => { if (!video.muted) video.muted = true; };
 
     const revoke = () => {
-      if (observer) { observer.disconnect(); observer = null; }
+      if (!allowed) return;
+      allowed.video.removeEventListener('pause', allowed.onPause);
+      if (allowed.observer) allowed.observer.disconnect();
       allowed = null;
     };
 
-    const watch = video => {
-      if (typeof IntersectionObserver === 'undefined') return;
-      observer = new IntersectionObserver(entries => {
-        for (const entry of entries) {
-          if (entry.intersectionRatio < VISIBLE_RATIO) {
-            mute(video);
-            revoke();
-          }
-        }
-      }, { threshold: [VISIBLE_RATIO] });
-      observer.observe(video);
+    const silence = video => {
+      if (allowed && allowed.video === video) revoke();
+      mute(video);
     };
 
-    // Shared by both listeners below: decide whether this unmuted video gets to
-    // stay that way, or gets muted back down.
-    const check = video => {
-      if (muting || !(video instanceof HTMLMediaElement) || video.muted) return;
+    const grant = video => {
+      if (allowed) {
+        const previous = allowed.video;
+        revoke();
+        mute(previous); // only one video with sound
+      }
+      const onPause = () => { if (!recent(lastAction)) silence(video); };
+      video.addEventListener('pause', onPause);
+      let observer = null;
+      if (typeof IntersectionObserver !== 'undefined') {
+        observer = new IntersectionObserver(entries => {
+          if (entries.some(entry => !entry.isIntersecting)) silence(video);
+        });
+        observer.observe(video);
+      }
+      allowed = { video, onPause, observer };
+    };
 
-      if (video === allowed) return;                       // already approved
-      if (Date.now() - lastGesture > GESTURE_MS) {         // nobody asked for this
-        mute(video);
+    const check = e => {
+      const video = e.target;
+      if (!(video instanceof HTMLMediaElement)) return;
+      const isAllowed = allowed && allowed.video === video;
+      if (video.muted) {
+        if (isAllowed) revoke(); // muted by me or X: sound needs a new action of mine
         return;
       }
-      if (allowed && allowed !== video) mute(allowed);     // only one video with sound
-      revoke();
-      allowed = video;
-      watch(video);
+      if (isAllowed) return;
+      if (recent(lastControl)) grant(video);
+      else mute(video);
     };
-
-    // volumechange: catches the case already unmuted, e.g. dragging the volume
-    // slider, or X flipping video.muted on an existing element.
-    document.addEventListener('volumechange', e => check(e.target), true);
-
-    // play: catches a video that is unmuted from the very start — a freshly
-    // loaded/replaced <video> whose muted property never actually "changes",
-    // so volumechange never fires for it. This covers both a newly played video
-    // and one scrolled back into view that X re-renders as a new element.
-    document.addEventListener('play', e => check(e.target), true);
+    // Media events don't bubble, but capture listeners on document still see them.
+    document.addEventListener('play', check, true);
+    document.addEventListener('volumechange', check, true);
   },
 });
