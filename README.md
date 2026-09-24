@@ -32,7 +32,6 @@ https://github.com/10ta/userscripts/releases/latest/download/toolkit.user.js
 安装链接：
 
 <!-- standalone:start -->
-- 中国p站vip：https://github.com/10ta/userscripts/releases/latest/download/pvip.user.js
 - X video mute diagnostics：https://github.com/10ta/userscripts/releases/latest/download/twitter-mute.user.js
 <!-- standalone:end -->
 
