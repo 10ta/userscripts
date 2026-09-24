@@ -21,10 +21,24 @@ https://github.com/10ta/userscripts/releases/latest/download/toolkit.user.js
 | 隐藏分享按钮 (`x-hide-share`) | 开 | /(^|\.)x\.com$/ /(^|\.)twitter\.com$/ | Hide the Share button under posts on X/Twitter. |
 | 解除复制/右键限制 (`remove-web-limits`) | 按网站（预置 61 个） | 全部 | Unblock copy, cut, text selection and the context menu on sites that disable them. |
 | Twemoji 替换 (`twemoji-everywhere`) | 开 | 全部 | Map common emoji font names to the locally installed Twemoji (COLR) font. |
-| YouTube 网速单位转换器 (`youtube-speed`) | 开 | `*://www.youtube.com/*` `*://m.youtube.com/*` `*://youtube.com/*` | 在YouTube的"详细统计信息"中，将连接速度(Connection Speed)从Kbps实时转换为MB/s并显示。支持手机端(m.youtube.com)和中文界面。 |
 <!-- modules:end -->
 
 （上表由构建脚本根据 `src/modules/` 自动生成，不要手动修改。）
+
+## 独立脚本（standalone）
+
+放在 `standalone/` 目录里的 `*.user.js` 不打包进 Toolkit，而是各自作为独立脚本发布，在 Tampermonkey 里单独安装：每个脚本拥有完整的原生运行环境（自己的 `@grant`、`@run-at`、沙箱），开关用 Tampermonkey 弹出菜单里每个脚本自带的启用开关。构建时会把 `@updateURL` / `@downloadURL` 指向本仓库的 Release，修改脚本时记得提高 `@version`，否则 Tampermonkey 不会更新。
+
+安装链接：
+
+<!-- standalone:start -->
+（暂无）
+<!-- standalone:end -->
+
+**新功能放哪里：**
+
+- **Toolkit 模块**（`src/modules/`，`register` 写法）：小功能、纯 CSS 或少量事件处理，希望和其他功能共用一个脚本、统一在 Toolkit 菜单里开关，适合按网站开关的功能。
+- **独立脚本**（`standalone/`）：现成的第三方脚本；需要 `@grant none` 在网页环境里运行、依赖精确的 `@run-at` 时机、用到 `@require` / `@resource` / `@connect`；逻辑较复杂、希望出问题时不影响其他功能。
 
 ## 按网站开关的数据保存
 
@@ -72,31 +86,14 @@ register({
 
 `run` 在 `document-start` 阶段执行，注入样式不会闪烁；需要操作页面元素时放进 `ctx.onReady`。每个模块在独立作用域里运行，顶层变量不会互相冲突。
 
-## 直接放入现成的油猴脚本
-
-除了按上面的写法新建模块，也可以把一个**完整的油猴脚本**（带 `// ==UserScript==` 头）原样放进 `src/modules/`，不需要改写。构建时会自动把它包装成 Toolkit 模块：
-
-- **菜单开关**：名称取 `@name`（优先 `@name:zh-CN`），默认开启；想默认关闭，在脚本头里加一行 `// @toolkit-default off`。
-- **生效范围**：按脚本自己的 `@match`、`@include`、`@exclude` 判断，只有匹配的页面才显示开关、才运行。
-- **运行时机**：按 `@run-at`（`document-start` / `document-body` / `document-end` / `document-idle`，缺省为 `document-idle`）；`@noframes` 同样有效。
-- **依赖**：`@require` 的库在构建时下载（缓存在 `.cache/`），只内联给这一个脚本用；`@resource`、`@connect`、`@grant` 会汇总到合集的脚本头里。
-- **独立的 GM 接口**：`GM_getValue` 等存储自动加上模块前缀，和其他模块互不干扰；`GM_info` 返回这个脚本自己的信息；它注册的菜单项显示为子项（`└`）。`GM.*` 异步接口同样可用。
-
-需要知道的限制：
-
-- 原脚本单独安装时保存的设置不会自动迁移过来，需要重新设置一次。
-- 放进来的是副本，原作者更新后需要手动替换文件。
-- `@grant none` 的脚本在 Firefox 上运行于隔离沙箱，直接读写网页全局变量的写法可能失效（Chrome 基本不受影响）。
-- 运行时机较晚的脚本，它自己注册的菜单项可能出现在菜单末尾。
-- 如果文件里既有脚本头、又在顶层调用了 `register(...)`，会被当作 Toolkit 模块处理，脚本头只是注释。两种格式不要混用。
-
 ## 目录结构
 
 ``` bash
 src/core.js           模块注册、开关菜单、运行时
-src/modules/*.js      每个文件一个功能：Toolkit 模块或现成的油猴脚本（以 _ 开头的文件不会被打包）
-scripts/build.mjs     构建：包装油猴脚本、拼接、语法检查、生成 README 功能表
+src/modules/*.js      每个文件一个功能（以 _ 开头的文件不会被打包）
+scripts/build.mjs     构建：拼接、语法检查、生成 README 功能表
 scripts/new-module.mjs 新建模块模板
+standalone/*.user.js  独立脚本，单独发布、单独安装
 ```
 
 版本号格式为 `年.月日.构建序号`（月日、构建序号补零，如 `2026.0922.00020`），保证按数字比较时始终递增，Tampermonkey 能正确识别更新，GitHub 的 Release/Tag 列表也能按正确顺序排列。

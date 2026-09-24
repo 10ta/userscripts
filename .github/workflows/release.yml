@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'src/**'
+      - 'standalone/**'
       - 'scripts/**'
       - 'package.json'
       - '.github/workflows/release.yml'
@@ -48,5 +49,5 @@ jobs:
           make_latest: true
           fail_on_unmatched_files: true
           files: |
-            dist/toolkit.user.js
+            dist/*.user.js
             dist/toolkit.meta.js

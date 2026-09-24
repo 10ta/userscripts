@@ -138,39 +138,7 @@ function clearLocalDiffs(mods) {
   for (const mod of mods.filter(m => m.scope === 'site')) setLocalDiff(mod, { add: [], remove: [] });
 }
 
-// Userscript URL patterns -> RegExp.
-//   @match   scheme://host/path with * wildcards ("*." host prefix = any subdomain)
-//   @include glob with *, or /regex/
-const escapeRe = str => str.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
-function matchPatternToRe(pattern) {
-  if (pattern === '<all_urls>') return /^(https?|file|ftp):\/\//;
-  const m = pattern.match(/^(\*|https?|file|ftp):\/\/([^/]*)(\/.*)?$/);
-  if (!m) return null;
-  const [, scheme, host, pathPart = '/*'] = m;
-  const schemeRe = scheme === '*' ? 'https?' : escapeRe(scheme);
-  const hostRe = host === '*' ? '[^/]*'
-    : host.startsWith('*.') ? `(?:[^/]*\\.)?${escapeRe(host.slice(2))}`
-    : escapeRe(host);
-  const pathRe = pathPart.split('*').map(escapeRe).join('.*');
-  return new RegExp(`^${schemeRe}://${hostRe}(?::\\d+)?${pathRe}$`);
-}
-function includeToRe(pattern) {
-  const re = pattern.match(/^\/(.*)\/([a-z]*)$/);
-  if (re) return new RegExp(re[1], re[2]);
-  return new RegExp(`^${pattern.split('*').map(escapeRe).join('.*')}$`);
-}
-
 function matchesPage(mod) {
-  if (mod.userscript) {
-    const url = location.href;
-    const us = mod.userscript;
-    const hit = list => list.some(re => re && re.test(url));
-    us._match ||= us.match.map(matchPatternToRe);
-    us._include ||= us.include.map(includeToRe);
-    us._exclude ||= us.exclude.map(p => matchPatternToRe(p) || includeToRe(p));
-    const included = (us.match.length || us.include.length) ? hit(us._match) || hit(us._include) : true;
-    return included && !hit(us._exclude);
-  }
   if (!mod.match || mod.match.length === 0) return true;
   const host = location.hostname;
   return mod.match.some(re => re.test(host));
@@ -197,103 +165,18 @@ function makeContext(mod) {
     log: (...args) => console.log(prefix, ...args),
     get: (key, def) => GM_getValue(`data:${mod.id}:${key}`, def),
     set: (key, value) => GM_setValue(`data:${mod.id}:${key}`, value),
-    gm: mod.userscript ? makeGM(mod) : null,
   };
-}
-
-// GM_* API for a wrapped userscript: its own storage namespace, its own
-// GM_info and resources, menu items shown under its toggle; the rest passes
-// through to the script manager (undefined when the manager lacks it).
-function makeGM(mod) {
-  // Script managers expose GM_* as variables in the script's scope, not as
-  // window properties, so each one is referenced by name here.
-  const managerApi = {
-    GM_listValues: typeof GM_listValues === 'function' ? GM_listValues : undefined,
-    GM_getResourceText: typeof GM_getResourceText === 'function' ? GM_getResourceText : undefined,
-    GM_getResourceURL: typeof GM_getResourceURL === 'function' ? GM_getResourceURL : undefined,
-    GM_addElement: typeof GM_addElement === 'function' ? GM_addElement : undefined,
-    GM_xmlhttpRequest: typeof GM_xmlhttpRequest === 'function' ? GM_xmlhttpRequest : undefined,
-    GM_download: typeof GM_download === 'function' ? GM_download : undefined,
-    GM_openInTab: typeof GM_openInTab === 'function' ? GM_openInTab : undefined,
-    GM_setClipboard: typeof GM_setClipboard === 'function' ? GM_setClipboard : undefined,
-    GM_notification: typeof GM_notification === 'function' ? GM_notification : undefined,
-    GM_log: typeof GM_log === 'function' ? GM_log : undefined,
-  };
-  const has = name => typeof managerApi[name] === 'function';
-  const pass = name => managerApi[name];
-  const key = k => `us:${mod.id}:${k}`;
-  const us = mod.userscript;
-  const resource = name => us.resources[name] || name;
-
-  const api = {
-    GM_getValue: (k, d) => GM_getValue(key(k), d),
-    GM_setValue: (k, v) => GM_setValue(key(k), v),
-    GM_deleteValue: k => GM_deleteValue(key(k)),
-    GM_listValues: () => (has('GM_listValues') ? managerApi.GM_listValues() : [])
-      .filter(k => k.startsWith(key(''))).map(k => k.slice(key('').length)),
-    GM_registerMenuCommand: (label, fn, opts) => GM_registerMenuCommand(`${CHILD}${label}`, fn, opts),
-    GM_unregisterMenuCommand: id => GM_unregisterMenuCommand(id),
-    GM_getResourceText: name => has('GM_getResourceText') ? managerApi.GM_getResourceText(resource(name)) : undefined,
-    GM_getResourceURL: name => has('GM_getResourceURL') ? managerApi.GM_getResourceURL(resource(name)) : undefined,
-    GM_addStyle: css => GM_addStyle(css),
-    GM_info: {
-      ...(typeof GM_info === 'object' ? GM_info : {}),
-      script: { name: mod.name, description: mod.description, version: us.version, namespace: us.namespace },
-    },
-  };
-  for (const name of ['GM_addElement', 'GM_xmlhttpRequest', 'GM_download', 'GM_openInTab',
-    'GM_setClipboard', 'GM_notification', 'GM_log']) api[name] = pass(name);
-
-  // Promise-based GM.* API (Greasemonkey 4 style).
-  const wrap = fn => (fn ? (...args) => Promise.resolve(fn(...args)) : undefined);
-  api.GM = {
-    info: api.GM_info,
-    getValue: wrap(api.GM_getValue), setValue: wrap(api.GM_setValue),
-    deleteValue: wrap(api.GM_deleteValue), listValues: wrap(api.GM_listValues),
-    registerMenuCommand: wrap(api.GM_registerMenuCommand),
-    getResourceText: wrap(api.GM_getResourceText), getResourceUrl: wrap(api.GM_getResourceURL),
-    addStyle: wrap(api.GM_addStyle), addElement: wrap(api.GM_addElement),
-    xmlHttpRequest: api.GM_xmlhttpRequest, download: api.GM_download,
-    openInTab: api.GM_openInTab, setClipboard: wrap(api.GM_setClipboard),
-    notification: api.GM_notification, log: api.GM_log,
-  };
-  return api;
-}
-
-// @run-at for wrapped userscripts; Toolkit modules always start at document-start.
-function whenRunAt(runAt, fn) {
-  const ready = () => document.readyState !== 'loading';
-  switch (runAt) {
-    case 'document-start':
-      return fn();
-    case 'document-body':
-      if (document.body) return fn();
-      return new MutationObserver((_, obs) => {
-        if (document.body) { obs.disconnect(); fn(); }
-      }).observe(document.documentElement, { childList: true });
-    case 'document-end':
-      if (ready()) return fn();
-      return document.addEventListener('DOMContentLoaded', fn, { once: true });
-    default: // document-idle: after DOMContentLoaded, once the page had a moment
-      if (ready()) return setTimeout(fn, 0);
-      return document.addEventListener('DOMContentLoaded', () => setTimeout(fn, 0), { once: true });
-  }
 }
 
 function runModules() {
-  const inFrame = window.top !== window.self;
   for (const mod of MODULES) {
     if (mod.scope === 'site') migrateSites(mod);
     if (!matchesPage(mod) || !isEnabled(mod)) continue;
-    if (mod.userscript && mod.userscript.noframes && inFrame) continue;
-    const start = () => {
-      try {
-        mod.run(makeContext(mod));
-      } catch (err) {
-        console.error(`[toolkit:${mod.id}] failed`, err);
-      }
-    };
-    whenRunAt(mod.userscript ? mod.userscript.runAt : 'document-start', start);
+    try {
+      mod.run(makeContext(mod));
+    } catch (err) {
+      console.error(`[toolkit:${mod.id}] failed`, err);
+    }
   }
 }
 
