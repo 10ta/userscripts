@@ -32,7 +32,7 @@ https://github.com/10ta/userscripts/releases/latest/download/toolkit.user.js
 安装链接：
 
 <!-- standalone:start -->
-- X video mute diagnostics：https://github.com/10ta/userscripts/releases/latest/download/twitter-mute.user.js
+（暂无）
 <!-- standalone:end -->
 
 **新功能放哪里：**
