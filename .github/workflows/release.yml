@@ -20,6 +20,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history: standalone script versions come from each file's last commit time.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -50,4 +53,4 @@ jobs:
           fail_on_unmatched_files: true
           files: |
             dist/*.user.js
-            dist/toolkit.meta.js
+            dist/*.meta.js

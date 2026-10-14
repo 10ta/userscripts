@@ -27,12 +27,12 @@ https://github.com/10ta/userscripts/releases/latest/download/toolkit.user.js
 
 ## 独立脚本（standalone）
 
-放在 `standalone/` 目录里的 `*.user.js` 不打包进 Toolkit，而是各自作为独立脚本发布，在 Tampermonkey 里单独安装：每个脚本拥有完整的原生运行环境（自己的 `@grant`、`@run-at`、沙箱），开关用 Tampermonkey 弹出菜单里每个脚本自带的启用开关。构建时会把 `@updateURL` / `@downloadURL` 指向本仓库的 Release，修改脚本时记得提高 `@version`，否则 Tampermonkey 不会更新。
+放在 `standalone/` 目录里的 `*.user.js` 不打包进 Toolkit，而是各自作为独立脚本发布，在 Tampermonkey 里单独安装：每个脚本拥有完整的原生运行环境（自己的 `@grant`、`@run-at`、沙箱），开关用 Tampermonkey 弹出菜单里每个脚本自带的启用开关。构建时会把 `@updateURL` / `@downloadURL` 指向本仓库的 Release，并自动给版本号追加最后一次提交该文件的时间（如 `0.6.4` → `0.6.4.202610132101`），所以改完直接 push 就会触发更新，不需要手动改 `@version`。文件名必须以 `.user.js` 结尾，且不要用 `+` 等特殊字符（会出现在下载链接里）。
 
 安装链接：
 
 <!-- standalone:start -->
-（暂无）
+- South Plus +++：https://github.com/10ta/userscripts/releases/latest/download/south-plus-plus.user.js
 <!-- standalone:end -->
 
 **新功能放哪里：**

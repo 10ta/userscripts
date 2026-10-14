@@ -7,6 +7,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
+import { execFileSync } from 'node:child_process';
 
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
@@ -95,6 +96,7 @@ const standaloneDir = path.join(root, 'standalone');
 const standalone = fs.existsSync(standaloneDir)
   ? fs.readdirSync(standaloneDir).filter(f => f.endsWith('.user.js')).sort()
   : [];
+const standaloneVersions = [];
 for (const file of standalone) {
   let code = fs.readFileSync(path.join(standaloneDir, file), 'utf8');
   if (!/\/\/\s*==UserScript==/.test(code)) {
@@ -107,11 +109,35 @@ for (const file of standalone) {
     console.error(`✗ standalone/${file}: ${err.message}`);
     process.exit(1);
   }
-  const url = `${base}/${file}`;
+  // Version: the script's own @version plus the time of the last commit that
+  // touched this file, e.g. 0.6.4 → 0.6.4.202610132101. It only changes when
+  // the file changes and always increases, so no manual bump is needed.
+  const declared = (code.match(/^\/\/\s*@version\s+(\S+)/m) || [])[1] || '0';
+  const stamp = lastCommitStamp(path.join('standalone', file));
+  const version = stamp ? `${declared}.${stamp}` : declared;
+
+  const metaFile = file.replace(/\.user\.js$/, '.meta.js');
   code = code
-    .replace(/^\/\/\s*@(updateURL|downloadURL)\b.*\n/gm, '')
-    .replace(/^(\/\/\s*==\/UserScript==)/m, `// @updateURL    ${url}\n// @downloadURL  ${url}\n$1`);
+    .replace(/^\/\/\s*@(updateURL|downloadURL|version)\b.*\n/gm, '')
+    .replace(/^(\/\/\s*==UserScript==\s*\n)/m, `$1// @version      ${version}\n`)
+    .replace(/^(\/\/\s*==\/UserScript==)/m,
+      `// @updateURL    ${base}/${metaFile}\n// @downloadURL  ${base}/${file}\n$1`);
   fs.writeFileSync(path.join(root, 'dist', file), code);
+  // Header only: Tampermonkey checks this small file for updates instead of
+  // downloading the whole script every time.
+  fs.writeFileSync(path.join(root, 'dist', metaFile),
+    code.match(/^\/\/\s*==UserScript==[\s\S]*?^\/\/\s*==\/UserScript==/m)[0] + '\n');
+  standaloneVersions.push(`${file}@${version}`);
+}
+
+function lastCommitStamp(relPath) {
+  try {
+    const out = execFileSync('git', ['log', '-1', '--format=%cd', '--date=format-local:%Y%m%d%H%M', '--', relPath],
+      { cwd: root, encoding: 'utf8', env: { ...process.env, TZ: 'UTC' }, stdio: ['ignore', 'pipe', 'ignore'] });
+    return out.trim();
+  } catch {
+    return '';
+  }
 }
 
 // Refresh the module table in README between the markers.
@@ -141,4 +167,4 @@ if (fs.existsSync(readmePath)) {
 }
 
 console.log(`✓ built toolkit ${version} with ${modules.length} module(s): ${ids.join(', ')}`
-  + (standalone.length ? `; standalone: ${standalone.join(', ')}` : ''));
+  + (standalone.length ? `; standalone: ${standaloneVersions.join(', ')}` : ''));
