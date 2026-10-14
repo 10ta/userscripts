@@ -32,7 +32,7 @@ https://github.com/10ta/userscripts/releases/latest/download/toolkit.user.js
 安装链接：
 
 <!-- standalone:start -->
-- South Plus +++：https://github.com/10ta/userscripts/releases/latest/download/south-plus-plus.user.js
+- Southplus Plus：https://github.com/10ta/userscripts/releases/latest/download/south-plus-plus.user.js
 <!-- standalone:end -->
 
 **新功能放哪里：**
