@@ -35,6 +35,32 @@ https://github.com/10ta/userscripts/releases/latest/download/toolkit.user.js
 - Southplus Plus：https://github.com/10ta/userscripts/releases/latest/download/south-plus-plus.user.js
 <!-- standalone:end -->
 
+### 更新独立脚本的流程
+
+**不需要手动改版本号。** 构建时会在脚本自己的 `@version` 后面追加"最后一次提交这个文件的时间"（UTC，精确到分钟），例如 `2.57.73` 会变成 `2.57.73.202610140115`。只要文件有新提交，版本号就一定变大，Tampermonkey 就会更新。想改 `@version` 也可以，只是不必要。
+
+1. **替换文件**：把新版脚本覆盖到 `standalone/` 里的**同名**文件（如 `south-plus-plus.user.js`）。不要改文件名，否则安装链接会变。
+2. **补回本地改动**：如果是拿上游的新版整个覆盖，之前在仓库里对它做过的修改会被冲掉，需要重新加上。这些修改列在下方的「本地改动记录」里。
+3. **检查元数据**：
+   - `@name` 和 `@namespace` 尽量保持不变。Tampermonkey 用这两项识别"是不是同一个脚本"，改了以后会被当成另一个新脚本：旧的不会自动更新，得手动卸载旧的、重新安装。
+   - `@updateURL` / `@downloadURL` 不用管，构建会自动改写。
+4. **本地检查（可选）**：执行 `npm run build`，能通过语法检查就会生成 `dist/<名字>.user.js`。可以把它粘贴进 Tampermonkey 试一下。
+5. **提交并推送**：
+
+   ```bash
+   git add standalone/
+   git commit -m "sp++: 更新到 x.y.z"
+   git push
+   ```
+
+6. **自动发布**：推送到 main 后，GitHub Actions 会构建并发布新的 Release。已安装的脚本会在 Tampermonkey 下次检查更新时自动更新。如果想马上更新，可以在 Tampermonkey 里点"检查更新"。
+
+新增一个独立脚本的流程相同：把 `名字.user.js` 放进 `standalone/` 即可。构建会自动把它的安装链接写进上面的列表（本地执行 `npm run build` 后，README 一并提交）。
+
+### 本地改动记录
+
+- `south-plus-plus.user.js`：去掉了星空背景的星星层和 `spp-star-move` 动画，只保留静态夜空渐变。原因是约 900 个 `box-shadow` 一直在位移，再加上玻璃卡的 `backdrop-filter` 每帧重算，非常耗资源。改动位于 `initStarfield()`（CSS 和 `mount()`），并删掉了 `SPP_STAR_LAYERS` / `SPP_STAR_PTS` / `sppStarShadow`。覆盖新版后，在 `initStarfield` 里重新删掉这些即可。
+
 **新功能放哪里：**
 
 - **Toolkit 模块**（`src/modules/`，`register` 写法）：小功能、纯 CSS 或少量事件处理，希望和其他功能共用一个脚本、统一在 Toolkit 菜单里开关，适合按网站开关的功能。
